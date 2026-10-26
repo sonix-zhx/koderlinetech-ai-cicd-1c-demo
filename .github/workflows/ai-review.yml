@@ -38,8 +38,12 @@ jobs:
       - name: Ревью агентом
         # Проверить при первом прогоне: разбор сообщения вместе с -f и вид вывода
         run: |
-          opencode run "$(cat .github/prompts/review.md)" -f diff.patch \
+          opencode run "$(cat .github/prompts/review.md)" -f diff.patch 2>opencode.err \
             | .github/scripts/clean-output.sh '^## Итог' > review.md
+          # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
+          if grep -qi 'error' opencode.err; then
+            { echo '**Ошибка запуска агента:**'; echo '```'; sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' opencode.err | tail -n 20; echo '```'; } >> review.md
+          fi
 
       - name: Комментарий в PR
         run: .github/scripts/post-comment.sh ai-review review.md

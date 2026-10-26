@@ -37,8 +37,12 @@ jobs:
         run: |
           { cat .github/prompts/release-notes.md
             printf '\nТег: %s\nДиапазон коммитов: %s\n' "$TAG" "$RANGE"; } > task.md
-          opencode run "$(cat task.md)" \
+          opencode run "$(cat task.md)" 2>opencode.err \
             | .github/scripts/clean-output.sh '^### Для разработчиков' > notes.md
+          # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
+          if grep -qi 'error' opencode.err; then
+            { echo '**Ошибка запуска агента:**'; echo '```'; sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' opencode.err | tail -n 20; echo '```'; } >> notes.md
+          fi
 
       - name: GitHub Release
         run: |
