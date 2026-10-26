@@ -20,8 +20,8 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       # Ключ Zen. Для PR из форков секрет недоступен, job упадёт.
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-      # Ревью только читает код
-      OPENCODE_PERMISSION: '{"edit":"deny","bash":"deny","webfetch":"deny"}'
+      # Агент ничего не читает и не запускает: всё нужное уже в сообщении
+      OPENCODE_PERMISSION: '{"edit":"deny","bash":"deny","webfetch":"deny","websearch":"deny","read":"deny","glob":"deny","grep":"deny","list":"deny","external_directory":"deny"}'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,8 +41,8 @@ jobs:
           { cat .github/prompts/review.md; printf '\n\n```diff\n'; cat diff.patch; printf '```\n'; } \
             | opencode run 2>opencode.err \
             | .github/scripts/clean-output.sh '^## Итог' > review.md
-          # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
-          if grep -qi 'error' opencode.err; then
+          # opencode run выходит с кодом 0 даже при ошибке — если ответа нет, показываем stderr
+          if ! grep -q '^## Итог' review.md; then
             { echo '**Ошибка запуска агента:**'; echo '```'; sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' opencode.err | tail -n 20; echo '```'; } >> review.md
             { echo '<details><summary>Диагностика</summary>'; echo; echo '```'; which opencode; opencode --version
               echo "prompt bytes: $(wc -c < .github/prompts/review.md), diff bytes: $(wc -c < diff.patch)"
@@ -56,4 +56,4 @@ jobs:
         run: |
           verdict=$(grep -E '^VERDICT: (PASS|FAIL)' review.md | tail -n 1 || true)
           echo "Вердикт: ${verdict:-не найден}"
-          [ "$verdict" = "VERDICT: PASS" ] || exit 1
+          case "$verdict" in "VERDICT: PASS"*) ;; *) exit 1 ;; esac

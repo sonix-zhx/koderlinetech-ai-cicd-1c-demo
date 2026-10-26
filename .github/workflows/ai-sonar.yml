@@ -24,7 +24,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-      OPENCODE_PERMISSION: '{"edit":"deny","bash":"deny","webfetch":"deny"}'
+      OPENCODE_PERMISSION: '{"edit":"deny","bash":"deny","webfetch":"deny","websearch":"deny","read":"deny","glob":"deny","grep":"deny","list":"deny","external_directory":"deny"}'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -78,8 +78,8 @@ jobs:
             { cat .github/prompts/sonar.md; printf '\n\n```json\n'; cat bsl-filtered.json; printf '\n```\n'; } \
               | opencode run 2>opencode.err \
               | .github/scripts/clean-output.sh '^## Итог' > review.md
-            # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
-            if grep -qi 'error' opencode.err; then
+            # opencode run выходит с кодом 0 даже при ошибке — если ответа нет, показываем stderr
+            if ! grep -q '^## Итог' review.md; then
               { echo '**Ошибка запуска агента:**'; echo '```'; sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' opencode.err | tail -n 20; echo '```'; } >> review.md
             fi
           fi
