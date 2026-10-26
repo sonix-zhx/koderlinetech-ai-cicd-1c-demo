@@ -21,7 +21,7 @@
 
 1. Ключ OpenCode Zen: Settings, Secrets and variables, Actions, секрет `OPENCODE_API_KEY`.
    Ключ создаётся в консоли OpenCode Zen. Имя переменной `OPENCODE_API_KEY` взято из документации Zen.
-2. Модель задана в одном месте: `opencode.json`, поле `model` (сейчас `opencode/big-pickle`).
+2. Модель задана в одном месте: `opencode.json`, поле `model` (сейчас `opencode/deepseek-v4.1-flash-free`).
    Бесплатные модели Zen действуют ограниченное время, при смене правится только эта строка.
 3. Интеграция для `/opencode`:
    1. Установить GitHub App: https://github.com/apps/opencode-agent (в этот репозиторий).
@@ -54,6 +54,6 @@ PR открывать в `main`. Тег `v1.0.0` стоит на начальн�
 
 - Имя jar в релизе BSL Language Server (`*exec.jar`) и имя файла отчёта `bsl-json.json`.
 - Что `opencode run "<текст>" -f файл` берёт текст и файл как задумано, и вид вывода (шапка отсекается скриптом `clean-output.sh`).
-- Что модель `opencode/big-pickle` ещё бесплатна и ключ `OPENCODE_API_KEY` принимается.
+- Что модель `opencode/deepseek-v4.1-flash-free` ещё бесплатна и ключ `OPENCODE_API_KEY` принимается.
 - Что `OPENCODE_PERMISSION` разрешает агенту `git log` и `git show` в релизе.
 - Что `main` не защищён от пуша `github-actions[bot]` (коммит в `CHANGELOG.md`).
