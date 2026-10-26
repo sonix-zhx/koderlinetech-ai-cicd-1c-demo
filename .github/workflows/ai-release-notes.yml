@@ -9,6 +9,8 @@ permissions:
 
 jobs:
   release:
+    # Начальный тег v1.0.0 описания не требует: предыдущего релиза нет
+    if: github.ref_name != 'v1.0.0'
     runs-on: ubuntu-latest
     env:
       TAG: ${{ github.ref_name }}
