@@ -44,6 +44,9 @@ jobs:
           # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
           if grep -qi 'error' opencode.err; then
             { echo '**Ошибка запуска агента:**'; echo '```'; sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' opencode.err | tail -n 20; echo '```'; } >> review.md
+            { echo '<details><summary>Диагностика</summary>'; echo; echo '```'; which opencode; opencode --version
+              echo "prompt bytes: $(wc -c < .github/prompts/review.md), diff bytes: $(wc -c < diff.patch)"
+              opencode run --help 2>&1 | head -n 40; echo '```'; echo '</details>'; } >> review.md
           fi
 
       - name: Комментарий в PR
