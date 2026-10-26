@@ -1,0 +1,51 @@
+name: ИИ-ревью
+
+on:
+  pull_request:
+    paths: ["**/*.bsl"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      # Ключ Zen. Для PR из форков секрет недоступен, job упадёт.
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      # Ревью только читает код
+      OPENCODE_PERMISSION: '{"edit":"deny","bash":"deny","webfetch":"deny"}'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-opencode
+
+      - name: Diff по BSL-файлам
+        run: |
+          git -c core.quotepath=false diff \
+            "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+            -- '*.bsl' > diff.patch
+
+      - name: Ревью агентом
+        # Проверить при первом прогоне: разбор сообщения вместе с -f и вид вывода
+        run: |
+          opencode run "$(cat .github/prompts/review.md)" -f diff.patch \
+            | .github/scripts/clean-output.sh '^## Итог' > review.md
+
+      - name: Комментарий в PR
+        run: .github/scripts/post-comment.sh ai-review review.md
+
+      - name: Статус по вердикту агента
+        run: |
+          verdict=$(grep -E '^VERDICT: (PASS|FAIL)' review.md | tail -n 1 || true)
+          echo "Вердикт: ${verdict:-не найден}"
+          [ "$verdict" = "VERDICT: PASS" ] || exit 1
