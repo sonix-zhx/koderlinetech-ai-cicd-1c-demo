@@ -48,6 +48,7 @@ jobs:
 
       - name: 2. Анализ
         run: |
+          mkdir -p bsl-report
           java -version 2>&1 | head -n 1 > bsl.log
           java -Xmx2g -jar bsl-ls.jar analyze --srcDir src \
             --reporter json --outputDir bsl-report --silent >> bsl.log 2>&1
