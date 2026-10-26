@@ -77,9 +77,13 @@ jobs:
           if [ "$(jq length bsl-filtered.json)" -eq 0 ]; then
             echo "BSL Language Server не нашёл замечаний в изменённых файлах." > review.md
           else
-            { cat .github/prompts/sonar.md; printf '\n\n```json\n'; cat bsl-filtered.json; printf '\n```\n'; } \
-              | timeout 300 opencode run 2>opencode.err \
-              | .github/scripts/clean-output.sh '^## Итог' > review.md
+            # Бесплатная модель иногда отвечает пусто — одна повторная попытка
+            for attempt in 1 2; do
+              { cat .github/prompts/sonar.md; printf '\n\n```json\n'; cat bsl-filtered.json; printf '\n```\n'; } \
+                | timeout 300 opencode run 2>opencode.err \
+                | .github/scripts/clean-output.sh '^## Итог' > review.md
+              grep -q '^## Итог' review.md && break
+            done
             # opencode run выходит с кодом 0 даже при ошибке — если ответа нет, показываем stderr
             if ! grep -q '^## Итог' review.md; then
               { echo '**Ошибка запуска агента:**'; echo '```'; sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' opencode.err | tail -n 20; echo '```'; } >> review.md
