@@ -11,6 +11,10 @@
   <commonModules>CommonModule.Продажи</commonModules>
   <commonModules>CommonModule.ИнтеграцияСайт</commonModules>
   <commonModules>CommonModule.ОтчётностьПродаж</commonModules>
+  <constants>Constant.АдресСайта</constants>
+  <constants>Constant.ПользовательСайта</constants>
   <catalogs>Catalog.Контрагенты</catalogs>
   <documents>Document.РеализацияТоваров</documents>
+  <informationRegisters>InformationRegister.ЦеныНоменклатуры</informationRegisters>
+  <accumulationRegisters>AccumulationRegister.ТоварыНаСкладах</accumulationRegisters>
 </mdclass:Configuration>
