@@ -1,3 +1,5 @@
+Репозиторий перенесён и заархивирован. Актуальная версия: https://github.com/sonix-zhx/koderlinetech-ai-cicd-1c
+
 # ИИ в CI/CD для 1С: демо
 
 Демо к докладу «Как встроить ИИ в CI/CD в 1С» (Koderline Tech, 27.10.2026).
