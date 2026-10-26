@@ -32,10 +32,10 @@ jobs:
 
       - uses: ./.github/actions/setup-opencode
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
 
       - name: 1. Скачать BSL Language Server
         # Проверить при первом прогоне: имя файла в релизе (*exec.jar)
@@ -74,7 +74,8 @@ jobs:
           if [ "$(jq length bsl-filtered.json)" -eq 0 ]; then
             echo "BSL Language Server не нашёл замечаний в изменённых файлах." > review.md
           else
-            opencode run "$(cat .github/prompts/sonar.md)" -f bsl-filtered.json 2>opencode.err \
+            { cat .github/prompts/sonar.md; printf '\n\n```json\n'; cat bsl-filtered.json; printf '\n```\n'; } \
+              | opencode run 2>opencode.err \
               | .github/scripts/clean-output.sh '^## Итог' > review.md
             # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
             if grep -qi 'error' opencode.err; then
@@ -89,5 +90,5 @@ jobs:
         if: failure()
         run: |
           { echo '**Пайплайн разбора упал.** Хвост лога:'; echo '```'
-            tail -n 30 bsl.log opencode.err 2>/dev/null; echo '```'; } > error.md
+            tail -n 30 bsl.log opencode.err 2>/dev/null || true; echo '```'; } > error.md
           .github/scripts/post-comment.sh ai-sonar error.md
