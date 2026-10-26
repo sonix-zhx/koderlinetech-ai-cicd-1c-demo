@@ -42,13 +42,15 @@ jobs:
         run: |
           url=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
             https://api.github.com/repos/1c-syntax/bsl-language-server/releases/latest \
-            | jq -r '.assets[] | select(.name | endswith("exec.jar")) | .browser_download_url')
+            | jq -r '.assets[] | select(.name | endswith("exec.jar")) | .browser_download_url' | head -n 1)
+          echo "BSL LS: $url"
           curl -fsSL -o bsl-ls.jar "$url"
 
       - name: 2. Анализ
         run: |
-          java -Xmx2g -jar bsl-ls.jar --analyze --srcDir src \
-            --reporter json --outputDir bsl-report --silent
+          java -version 2>&1 | head -n 1 > bsl.log
+          java -Xmx2g -jar bsl-ls.jar analyze --srcDir src \
+            --reporter json --outputDir bsl-report --silent >> bsl.log 2>&1
 
       - name: 3. Оставить замечания по изменённым в PR файлам
         run: |
@@ -72,9 +74,20 @@ jobs:
           if [ "$(jq length bsl-filtered.json)" -eq 0 ]; then
             echo "BSL Language Server не нашёл замечаний в изменённых файлах." > review.md
           else
-            opencode run "$(cat .github/prompts/sonar.md)" -f bsl-filtered.json \
+            opencode run "$(cat .github/prompts/sonar.md)" -f bsl-filtered.json 2>opencode.err \
               | .github/scripts/clean-output.sh '^## Итог' > review.md
+            # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
+            if grep -qi 'error' opencode.err; then
+              { echo '**Ошибка запуска агента:**'; echo '```'; sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' opencode.err | tail -n 20; echo '```'; } >> review.md
+            fi
           fi
 
       - name: 5. Комментарий в PR
         run: .github/scripts/post-comment.sh ai-sonar review.md
+
+      - name: Сообщить об ошибке в PR
+        if: failure()
+        run: |
+          { echo '**Пайплайн разбора упал.** Хвост лога:'; echo '```'
+            tail -n 30 bsl.log opencode.err 2>/dev/null; echo '```'; } > error.md
+          .github/scripts/post-comment.sh ai-sonar error.md
