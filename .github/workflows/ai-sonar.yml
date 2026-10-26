@@ -13,18 +13,20 @@ permissions:
   contents: read
   pull-requests: write
 
+# Ревью и разбор одного PR идут по очереди: бесплатная модель не любит параллельные запросы
 concurrency:
-  group: ai-sonar-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: ai-agent-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   sonar:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-      OPENCODE_PERMISSION: '{"edit":"deny","bash":"deny","webfetch":"deny","websearch":"deny","read":"deny","glob":"deny","grep":"deny","list":"deny","external_directory":"deny"}'
+      OPENCODE_PERMISSION: '{"edit":"deny","bash":"deny","webfetch":"deny","websearch":"deny"}'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -76,7 +78,7 @@ jobs:
             echo "BSL Language Server не нашёл замечаний в изменённых файлах." > review.md
           else
             { cat .github/prompts/sonar.md; printf '\n\n```json\n'; cat bsl-filtered.json; printf '\n```\n'; } \
-              | opencode run 2>opencode.err \
+              | timeout 300 opencode run 2>opencode.err \
               | .github/scripts/clean-output.sh '^## Итог' > review.md
             # opencode run выходит с кодом 0 даже при ошибке — если ответа нет, показываем stderr
             if ! grep -q '^## Итог' review.md; then
