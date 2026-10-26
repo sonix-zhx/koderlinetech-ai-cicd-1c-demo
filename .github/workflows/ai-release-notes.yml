@@ -37,7 +37,7 @@ jobs:
         run: |
           { cat .github/prompts/release-notes.md
             printf '\nТег: %s\nДиапазон коммитов: %s\n' "$TAG" "$RANGE"; } > task.md
-          opencode run "$(cat task.md)" 2>opencode.err \
+          opencode run < task.md 2>opencode.err \
             | .github/scripts/clean-output.sh '^### Для разработчиков' > notes.md
           # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
           if grep -qi 'error' opencode.err; then

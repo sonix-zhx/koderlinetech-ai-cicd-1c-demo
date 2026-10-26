@@ -36,9 +36,10 @@ jobs:
             -- '*.bsl' > diff.patch
 
       - name: Ревью агентом
-        # Проверить при первом прогоне: разбор сообщения вместе с -f и вид вывода
         run: |
-          opencode run "$(cat .github/prompts/review.md)" -f diff.patch 2>opencode.err \
+          # Промпт и diff передаём одним сообщением через stdin
+          { cat .github/prompts/review.md; printf '\n\n```diff\n'; cat diff.patch; printf '```\n'; } \
+            | opencode run 2>opencode.err \
             | .github/scripts/clean-output.sh '^## Итог' > review.md
           # opencode run выходит с кодом 0 даже при ошибке модели — показываем её явно
           if grep -qi 'error' opencode.err; then
